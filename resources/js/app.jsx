@@ -1,124 +1,121 @@
-import React from 'react';
+// resources/js/app.jsx
+import React, { useState, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
 import '../css/app.css';
+// import './index.css'
 import { Clock, User, LogOut, BookOpen, Award, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
+// API Service
+const API_URL = '/api';
 
-// Soal ujian contoh (dalam praktik real, ini dari database)
-const examQuestions = [
-    {
-        id: 1,
-        category: 'TWK',
-        question: 'Pancasila sebagai dasar negara Indonesia ditetapkan pada tanggal?',
-        options: [
-            '17 Agustus 1945',
-            '18 Agustus 1945',
-            '1 Juni 1945',
-            '22 Juni 1945'
-        ],
-        correctAnswer: 1
+const api = {
+    register: async (userData) => {
+        const response = await fetch(`${API_URL}/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(userData)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Registration failed');
+        return data;
     },
-    {
-        id: 2,
-        category: 'TWK',
-        question: 'Siapa presiden pertama Republik Indonesia?',
-        options: [
-            'Soeharto',
-            'Ir. Soekarno',
-            'B.J. Habibie',
-            'Megawati Soekarnoputri'
-        ],
-        correctAnswer: 1
+
+    login: async (email, password) => {
+        const response = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Login failed');
+        return data;
     },
-    {
-        id: 3,
-        category: 'TIU',
-        question: 'Jika A = 2, B = 4, C = 6, maka nilai A + B × C adalah?',
-        options: ['26', '28', '32', '36'],
-        correctAnswer: 0
+
+    logout: async (token) => {
+        const response = await fetch(`${API_URL}/logout`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            }
+        });
+        return await response.json();
     },
-    {
-        id: 4,
-        category: 'TIU',
-        question: 'Lanjutkan deret: 2, 4, 8, 16, ...',
-        options: ['24', '28', '32', '36'],
-        correctAnswer: 2
+
+    getQuestions: async (token) => {
+        const response = await fetch(`${API_URL}/questions`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error('Failed to load questions');
+        return data;
     },
-    {
-        id: 5,
-        category: 'TKP',
-        question: 'Anda menemukan rekan kerja melakukan kesalahan. Apa yang akan Anda lakukan?',
-        options: [
-            'Membiarkannya karena bukan urusan saya',
-            'Melaporkan langsung ke atasan',
-            'Mengingatkan dengan baik dan membantu memperbaiki',
-            'Menyebarkan ke rekan lain'
-        ],
-        correctAnswer: 2
+
+    startExam: async (token) => {
+        const response = await fetch(`${API_URL}/exam/start`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error('Failed to start exam');
+        return data;
     },
-    {
-        id: 6,
-        category: 'TKP',
-        question: 'Ketika menghadapi deadline yang ketat, sikap Anda adalah?',
-        options: [
-            'Panik dan menyerah',
-            'Menyalahkan orang lain',
-            'Membuat prioritas dan bekerja fokus',
-            'Menunda-nunda pekerjaan'
-        ],
-        correctAnswer: 2
+
+    submitExam: async (token, examId, answers) => {
+        const response = await fetch(`${API_URL}/exam/submit`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ exam_id: examId, answers })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error('Failed to submit exam');
+        return data;
     },
-    {
-        id: 7,
-        category: 'TWK',
-        question: 'UUD 1945 disahkan pada tanggal?',
-        options: [
-            '17 Agustus 1945',
-            '18 Agustus 1945',
-            '19 Agustus 1945',
-            '20 Agustus 1945'
-        ],
-        correctAnswer: 1
-    },
-    {
-        id: 8,
-        category: 'TIU',
-        question: 'Berapa hasil dari 15% dari 200?',
-        options: ['25', '30', '35', '40'],
-        correctAnswer: 1
-    },
-    {
-        id: 9,
-        category: 'TIU',
-        question: 'Sinonim kata "PRESTASI" adalah?',
-        options: ['Kegagalan', 'Pencapaian', 'Kesalahan', 'Kemalasan'],
-        correctAnswer: 1
-    },
-    {
-        id: 10,
-        category: 'TKP',
-        question: 'Anda diminta memimpin tim baru. Langkah pertama Anda adalah?',
-        options: [
-            'Langsung memberi perintah',
-            'Mengenal anggota tim dan kompetensinya',
-            'Membiarkan tim bekerja sendiri',
-            'Mengkritik kinerja sebelumnya'
-        ],
-        correctAnswer: 1
+
+    getExamHistory: async (token) => {
+        const response = await fetch(`${API_URL}/exam/history`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error('Failed to load history');
+        return data;
     }
-];
+};
 
 const CPNSExamSystem = () => {
     const [currentPage, setCurrentPage] = useState('login');
-    const [users, setUsers] = useState({});
     const [currentUser, setCurrentUser] = useState(null);
+    const [token, setToken] = useState(null);
+    const [questions, setQuestions] = useState([]);
     const [examState, setExamState] = useState({
         isActive: false,
+        examId: null,
         currentQuestion: 0,
         answers: {},
-        timeRemaining: 3600, // 60 menit
+        timeRemaining: 3600,
         startTime: null
     });
     const [examResults, setExamResults] = useState(null);
+    const [examHistory, setExamHistory] = useState([]);
     const [loginForm, setLoginForm] = useState({ email: '', password: '' });
     const [registerForm, setRegisterForm] = useState({
         name: '',
@@ -128,28 +125,19 @@ const CPNSExamSystem = () => {
         phone: ''
     });
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // Load data from storage on mount
+    // Load user from localStorage on mount
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                const usersData = await window.storage.get('cpns-users');
-                if (usersData) {
-                    setUsers(JSON.parse(usersData.value));
-                }
-            } catch (err) {
-                console.log('No existing users data');
-            }
-        };
-        loadData();
-    }, []);
-
-    // Save users to storage
-    useEffect(() => {
-        if (Object.keys(users).length > 0) {
-            window.storage.set('cpns-users', JSON.stringify(users));
+        const savedToken = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
+        if (savedToken && savedUser) {
+            setToken(savedToken);
+            setCurrentUser(JSON.parse(savedUser));
+            setCurrentPage('dashboard');
+            loadExamHistory(savedToken);
         }
-    }, [users]);
+    }, []);
 
     // Timer countdown
     useEffect(() => {
@@ -167,66 +155,96 @@ const CPNSExamSystem = () => {
         return () => clearInterval(interval);
     }, [examState.isActive, examState.timeRemaining]);
 
-    const handleLogin = (e) => {
-        e.preventDefault();
-        setError('');
-
-        const user = users[loginForm.email];
-        if (!user) {
-            setError('Email tidak terdaftar');
-            return;
+    const loadExamHistory = async (authToken) => {
+        try {
+            const result = await api.getExamHistory(authToken);
+            if (result.success) {
+                setExamHistory(result.data);
+            }
+        } catch (err) {
+            console.error('Failed to load exam history:', err);
         }
-
-        if (user.password !== loginForm.password) {
-            setError('Password salah');
-            return;
-        }
-
-        setCurrentUser(user);
-        setCurrentPage('dashboard');
-        setLoginForm({ email: '', password: '' });
     };
 
-    const handleRegister = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
 
-        if (users[registerForm.email]) {
-            setError('Email sudah terdaftar');
-            return;
+        try {
+            const result = await api.login(loginForm.email, loginForm.password);
+            
+            if (result.success) {
+                localStorage.setItem('token', result.data.token);
+                localStorage.setItem('user', JSON.stringify(result.data.user));
+                setToken(result.data.token);
+                setCurrentUser(result.data.user);
+                setCurrentPage('dashboard');
+                setLoginForm({ email: '', password: '' });
+                loadExamHistory(result.data.token);
+            }
+        } catch (err) {
+            setError(err.message || 'Login gagal');
+        } finally {
+            setLoading(false);
         }
-
-        if (registerForm.password.length < 6) {
-            setError('Password minimal 6 karakter');
-            return;
-        }
-
-        const newUser = {
-            ...registerForm,
-            registeredAt: new Date().toISOString(),
-            examHistory: []
-        };
-
-        setUsers(prev => ({
-            ...prev,
-            [registerForm.email]: newUser
-        }));
-
-        setCurrentUser(newUser);
-        setCurrentPage('dashboard');
-        setRegisterForm({ name: '', email: '', password: '', nik: '', phone: '' });
     };
 
-    const handleStartExam = () => {
-        setExamState({
-            isActive: true,
-            currentQuestion: 0,
-            answers: {},
-            timeRemaining: 3600,
-            startTime: new Date().toISOString()
-        });
-        setExamResults(null);
-        setCurrentPage('exam');
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+            const result = await api.register(registerForm);
+            
+            if (result.success) {
+                localStorage.setItem('token', result.data.token);
+                localStorage.setItem('user', JSON.stringify(result.data.user));
+                setToken(result.data.token);
+                setCurrentUser(result.data.user);
+                setCurrentPage('dashboard');
+                setRegisterForm({ name: '', email: '', password: '', nik: '', phone: '' });
+                loadExamHistory(result.data.token);
+            }
+        } catch (err) {
+            setError(err.message || 'Registrasi gagal');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleStartExam = async () => {
+        setLoading(true);
+        setError('');
+
+        try {
+            // Start exam in backend
+            const examResult = await api.startExam(token);
+            
+            if (examResult.success) {
+                // Load questions from database
+                const questionsResult = await api.getQuestions(token);
+                
+                if (questionsResult.success) {
+                    setQuestions(questionsResult.data);
+                    setExamState({
+                        isActive: true,
+                        examId: examResult.data.exam_id,
+                        currentQuestion: 0,
+                        answers: {},
+                        timeRemaining: 3600,
+                        startTime: examResult.data.started_at
+                    });
+                    setExamResults(null);
+                    setCurrentPage('exam');
+                }
+            }
+        } catch (err) {
+            setError(err.message || 'Gagal memulai ujian');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleAnswerSelect = (questionId, answerIndex) => {
@@ -239,80 +257,51 @@ const CPNSExamSystem = () => {
         }));
     };
 
-    const handleSubmitExam = () => {
-        const results = calculateResults();
-        setExamResults(results);
+    const handleSubmitExam = async () => {
+        if (!examState.examId) return;
 
-        // Save to user history
-        const updatedUser = {
-            ...currentUser,
-            examHistory: [
-                ...(currentUser.examHistory || []),
-                {
-                    date: new Date().toISOString(),
-                    ...results
-                }
-            ]
-        };
+        setLoading(true);
+        setError('');
 
-        setUsers(prev => ({
-            ...prev,
-            [currentUser.email]: updatedUser
-        }));
-
-        setCurrentUser(updatedUser);
-        setExamState(prev => ({ ...prev, isActive: false }));
-        setCurrentPage('results');
-    };
-
-    const calculateResults = () => {
-        let correct = 0;
-        let twkScore = 0, tiuScore = 0, tkpScore = 0;
-        let twkTotal = 0, tiuTotal = 0, tkpTotal = 0;
-
-        examQuestions.forEach(q => {
-            const userAnswer = examState.answers[q.id];
-            const isCorrect = userAnswer === q.correctAnswer;
-
-            if (q.category === 'TWK') {
-                twkTotal++;
-                if (isCorrect) twkScore++;
-            } else if (q.category === 'TIU') {
-                tiuTotal++;
-                if (isCorrect) tiuScore++;
-            } else if (q.category === 'TKP') {
-                tkpTotal++;
-                if (isCorrect) tkpScore++;
+        try {
+            const result = await api.submitExam(token, examState.examId, examState.answers);
+            
+            if (result.success) {
+                setExamResults(result.data.results);
+                setExamState(prev => ({ ...prev, isActive: false }));
+                setCurrentPage('results');
+                loadExamHistory(token);
             }
-
-            if (isCorrect) correct++;
-        });
-
-        const totalQuestions = examQuestions.length;
-        const percentage = (correct / totalQuestions) * 100;
-
-        return {
-            correct,
-            total: totalQuestions,
-            percentage: percentage.toFixed(2),
-            twk: { score: twkScore, total: twkTotal },
-            tiu: { score: tiuScore, total: tiuTotal },
-            tkp: { score: tkpScore, total: tkpTotal },
-            passed: percentage >= 65
-        };
+        } catch (err) {
+            setError(err.message || 'Gagal submit ujian');
+            alert('Error: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleLogout = () => {
-        setCurrentUser(null);
-        setCurrentPage('login');
-        setExamState({
-            isActive: false,
-            currentQuestion: 0,
-            answers: {},
-            timeRemaining: 3600,
-            startTime: null
-        });
-        setExamResults(null);
+    const handleLogout = async () => {
+        try {
+            await api.logout(token);
+        } catch (err) {
+            console.error('Logout error:', err);
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setCurrentUser(null);
+            setCurrentPage('login');
+            setExamState({
+                isActive: false,
+                examId: null,
+                currentQuestion: 0,
+                answers: {},
+                timeRemaining: 3600,
+                startTime: null
+            });
+            setExamResults(null);
+            setExamHistory([]);
+        }
     };
 
     const formatTime = (seconds) => {
@@ -1075,3 +1064,6 @@ const CPNSExamSystem = () => {
 
     return null;
 }
+
+const root = createRoot(document.getElementById('root'));
+root.render(<CPNSExamSystem />);
