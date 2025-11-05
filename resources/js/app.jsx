@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import '../css/app.css';
 import { Clock, User, LogOut, BookOpen, Award, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+
 
 // Soal ujian contoh (dalam praktik real, ini dari database)
 const examQuestions = [
